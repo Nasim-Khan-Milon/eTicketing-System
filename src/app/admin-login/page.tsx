@@ -1,41 +1,48 @@
 'use client'
 import axios from 'axios';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react'
 import { FcGoogle } from "react-icons/fc";
-function Register() {
-    const [name, setName] = useState("")
+function Login() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const router = useRouter()
 
-    const handleRegister = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const { data: session } = useSession();
+
+    console.log(session);
+
+
+    const handleSignIn = async (e: React.FormEvent) => {
+        e.preventDefault();
+
         try {
-            const result = await axios.post('/api/auth/register', {
-                name, email, password
-            })
-            router.push("/login")
-        } catch (error) {
-            console.log(error)
+            const res = await axios.post("/api/admin-login", { email, password });
+
+            if (res.data.success) {
+                router.push("/dashboard");
+            } else {
+                alert(res.data.message);
+            }
+        } catch (err: any) {
+            alert(err.response?.data?.message || "Something went wrong");
         }
-    }
+    };
+
+
+
+
+
     return (
         <div className='min-h-screen flex items-center justify-center bg-black text-white px-4'>
             <div className='w-full max-w-md border-2 border-white rounded-2xl p-8 shadow-lg bg-gray-900'>
-                <h1 className='text-2xl font-semibold text-center mb-6'>Register</h1>
-                <form className='space-y-6' onSubmit={handleRegister}>
-                    <div>
-                        <label className='block mb-1 font-medium'>Name</label>
-                        <input
-                            type="text"
-                            placeholder='Enter Name'
-                            className='w-full border-b border-white py-2 px-1 bg-gray-900 text-white outline-none placeholder-gray-400'
-                            onChange={(e) => setName(e.target.value)}
-                            value={name}
-                        />
-                    </div>
+                <div className='flex items-center justify-between gap-4 mb-8'>
+                    <button onClick={() => router.push('/login')} className='text-2xl font-semibold text-center mb-6'>Passenger Login</button>
+                    <button className='text-2xl font-semibold text-center mb-6'>Admin Login</button>
+                </div>
+                <form className='space-y-6' onSubmit={handleSignIn}>
+
                     <div>
                         <label className='block mb-1 font-medium'>Email</label>
                         <input
@@ -57,15 +64,13 @@ function Register() {
                         />
                     </div>
 
-                    <p className='text-sm text-center mt-1' onClick={() => router.push("/login")}>Already have an account ? <span className='text-blue-400 hover:underline'>login</span></p>
 
-
-
-                    <button className='w-full py-2 px-4 bg-white text-black font-semibold rounded-lg hover:bg-gray-200 transition-colors'>Register</button>
+                    <button className='w-full mt-3 py-2 px-4 bg-white text-black font-semibold rounded-lg hover:bg-gray-200 transition-colors'>Login</button>
                 </form>
 
 
-                
+
+
 
 
             </div>
@@ -73,4 +78,4 @@ function Register() {
     )
 }
 
-export default Register
+export default Login

@@ -9,6 +9,10 @@ function Login() {
   const [password, setPassword] = useState("")
   const router = useRouter()
 
+  const { data: session } = useSession();
+
+  console.log(session);
+
 
   const handleSignIn = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -31,7 +35,10 @@ function Login() {
   return (
     <div className='min-h-screen flex items-center justify-center bg-black text-white px-4'>
       <div className='w-full max-w-md border-2 border-white rounded-2xl p-8 shadow-lg bg-gray-900'>
-        <h1 className='text-2xl font-semibold text-center mb-6'>Login</h1>
+        <div className='flex items-center justify-between gap-4 mb-8'>
+          <button className='text-2xl font-semibold text-center mb-6'>Passenger Login</button>
+          <button onClick={()=>router.push('/admin-login')} className='text-2xl font-semibold text-center mb-6'>Admin Login</button>
+        </div>
         <form className='space-y-6' onSubmit={handleSignIn}>
 
           <div>

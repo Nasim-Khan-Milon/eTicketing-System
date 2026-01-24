@@ -1,33 +1,32 @@
-import { connect } from "mongoose";
+import mongoose from "mongoose";
 
-const mongodbUrl = process.env.MONGODB_URL!;
-if (!mongodbUrl) {
-    throw new Error("MONGODB_URL must be defined");
+const MONGODB_URL = process.env.MONGODB_URL as string;
+
+if (!MONGODB_URL) {
+  throw new Error("MONGODB_URL is not defined");
 }
 
-let cached = global.mongoose;
-
-if (!cached) {
-    cached = global.mongoose = { conn: null, promise: null };
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
 }
 
-const connectToDb = async () => {
-    if (cached.conn) {
-        return cached.conn;
-    }
+// @ts-ignore
+const cached: MongooseCache = global.mongoose || {
+  conn: null,
+  promise: null,
+};
 
-    if (!cached.promise) {
-        cached.promise = connect(mongodbUrl).then((c) => {
-            return c.connection;
-        });
-    }
+// @ts-ignore
+global.mongoose = cached;
 
-    try {
-        cached.conn = await cached.promise;
-    } catch (e) {
-        cached.promise = null;
-        throw e;
-    }
+export default async function connectToDb() {
+  if (cached.conn) return cached.conn;
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URL);
+  }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
 }
-
-export default connectToDb;

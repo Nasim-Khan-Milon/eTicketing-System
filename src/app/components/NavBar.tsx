@@ -41,6 +41,12 @@ const Navbar: React.FC = () => {
               Login
             </button>
 
+            <button className="h-9 px-6 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
+              onClick={() => router.push('/register')}
+            >
+              Sign Up
+            </button>
+
             <button
               aria-label="Open menu"
               onClick={() => setShowMenu(true)}

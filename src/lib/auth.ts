@@ -1,81 +1,82 @@
-import { NextAuthOptions } from "next-auth"
+import type { AuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import connectToDb from "./db"
 import User from "@/models/user.model"
 import bcrypt from "bcryptjs"
 
-const authOptions: NextAuthOptions = {
-    // Configure one or more authentication providers
+export const authOptions: AuthOptions = {
     providers: [
         CredentialsProvider({
             name: "Credentials",
             credentials: {
-                email: { label: "Email", type: "text", placeholder: "<email>" },
-                password: { label: "Password", type: "password", placeholder: "<password>" }
+                email: { label: "Email", type: "text" },
+                password: { label: "Password", type: "password" }
             },
-            async authorize(credentials, req) {
+            async authorize(credentials) {
+                try {
+                    if (!credentials?.email || !credentials?.password) {
+                        return null;
+                    }
 
-                const email = credentials?.email;
-                const password = credentials?.password;
-                if (!email || !password) {
-                    return null;
-                }
+                    await connectToDb();
 
-                await connectToDb();
-                const user = await User.findOne({ email });
-                if (!user) {
-                    throw new Error("No user found with the given email")
-                }
+                    const user = await User.findOne({ email: credentials.email });
+                    if (!user || !user.password) {
+                        return null;
+                    }
 
-                const isPasswordValid = await bcrypt.compare(password, user.password);
-                if (!isPasswordValid) {
-                    return null;
-                }
+                    const isValid = await bcrypt.compare(
+                        credentials.password,
+                        user.password
+                    );
 
-                return {
-                    id: user._id.toString(),
-                    email: user.email,
-                    name: user.name,
-                    image: user.image || null
+                    if (!isValid) {
+                        return null;
+                    }
+
+                    return {
+                        id: user._id.toString(),
+                        name: user.name,
+                        email: user.email,
+                        image: user.image ?? null,
+                        role: user.role,
+                    };
+                } catch (error) {
+                    console.error("NEXTAUTH AUTHORIZE ERROR:", error);
+                    return null; 
                 }
             }
+
         })
     ],
+
+    session: {
+        strategy: "jwt",
+    },
 
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
-                token.name = user.name;
-                token.email = user.email;
-                token.image = user.image;
+                token.role = user.role;
             }
             return token;
         },
 
         async session({ session, token }) {
-            if (token) {
+            if (session.user) {
                 session.user.id = token.id as string;
-                session.user.name = token.name as string;
-                session.user.email = token.email as string;
-                session.user.image = token.image as string | null;
+                session.user.role = token.role as "admin" | "passenger";
             }
-
             return session;
-        }
+        },
     },
 
-  session: {
-        strategy: "jwt",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-
     pages: {
-        signIn: '/login',
-        error: '/login',
+        signIn: "/login",
     },
 
     secret: process.env.NEXTAUTH_SECRET,
-}
+};
 
-export default authOptions
+export default authOptions;
