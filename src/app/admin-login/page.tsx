@@ -21,6 +21,7 @@ function Login() {
             const res = await axios.post("/api/admin-login", { email, password });
 
             if (res.data.success) {
+                localStorage.setItem("admin_token", res.data.token);
                 router.push("/dashboard");
             } else {
                 alert(res.data.message);
